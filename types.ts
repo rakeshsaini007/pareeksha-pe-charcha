@@ -4,6 +4,11 @@ export interface SchoolInfo {
   schoolName: string;
   nyayPanchayat: string;
   schoolType: string;
+  existingData?: {
+    class6: ClassData;
+    class7: ClassData;
+    class8: ClassData;
+  };
 }
 
 export interface ClassData {

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SchoolInfo, ClassData, EnrollmentPayload } from './types';
 import { fetchSchoolInfo, submitEnrollmentData } from './services/gasService';
 import { InputGroup } from './components/InputGroup';
@@ -9,6 +9,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [school, setSchool] = useState<SchoolInfo | null>(null);
+  const [isUpdate, setIsUpdate] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const [class6, setClass6] = useState<ClassData>({ enrolled: 0, registration: 0 });
@@ -34,10 +35,24 @@ const App: React.FC = () => {
     if (!udiseCode || udiseCode.length < 5) return;
     setLoading(true);
     setMessage(null);
+    setSchool(null);
+    
     const response = await fetchSchoolInfo(udiseCode);
     setLoading(false);
+    
     if (response.success && response.data) {
       setSchool(response.data);
+      if (response.data.existingData) {
+        setClass6(response.data.existingData.class6);
+        setClass7(response.data.existingData.class7);
+        setClass8(response.data.existingData.class8);
+        setIsUpdate(true);
+      } else {
+        setClass6({ enrolled: 0, registration: 0 });
+        setClass7({ enrolled: 0, registration: 0 });
+        setClass8({ enrolled: 0, registration: 0 });
+        setIsUpdate(false);
+      }
     } else {
       setSchool(null);
       setMessage({ type: 'error', text: response.error || 'School not found' });
@@ -66,13 +81,12 @@ const App: React.FC = () => {
     setSubmitting(false);
 
     if (response.success) {
-      setMessage({ type: 'success', text: 'Data saved successfully!' });
-      // Reset form
+      const successMsg = isUpdate ? 'Data updated successfully!' : 'Data saved successfully!';
+      alert(successMsg);
+      setMessage({ type: 'success', text: successMsg });
+      // Clear form for fresh state
       setUdiseCode('');
       setSchool(null);
-      setClass6({ enrolled: 0, registration: 0 });
-      setClass7({ enrolled: 0, registration: 0 });
-      setClass8({ enrolled: 0, registration: 0 });
     } else {
       setMessage({ type: 'error', text: response.error || 'Failed to save data' });
     }
@@ -105,6 +119,7 @@ const App: React.FC = () => {
                   type="text"
                   value={udiseCode}
                   onChange={(e) => setUdiseCode(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUdiseSearch()}
                   placeholder="Enter 11-digit UDISE Code"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-lg font-mono"
                 />
@@ -152,7 +167,12 @@ const App: React.FC = () => {
         {/* School Details Card & Form */}
         {school && (
           <div className="animate-slide-up space-y-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+               {isUpdate && (
+                <div className="absolute top-2 right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">
+                  Editing Existing Record
+                </div>
+               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">School Name</p>
@@ -223,14 +243,16 @@ const App: React.FC = () => {
               <button
                 type="submit"
                 disabled={submitting || hasErrors}
-                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-lg hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-gray-200 flex items-center justify-center gap-2"
+                className={`w-full py-4 text-white rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl flex items-center justify-center gap-2 ${
+                  isUpdate ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-900 hover:bg-black'
+                }`}
               >
                 {submitting ? (
                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                  </svg>
-                ) : 'Submit Enrollment Data'}
+                ) : isUpdate ? 'Update Enrollment Data' : 'Submit Enrollment Data'}
               </button>
             </form>
           </div>
