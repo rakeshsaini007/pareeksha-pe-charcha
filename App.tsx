@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react';
 import { SchoolInfo, ClassData, EnrollmentPayload } from './types';
 import { fetchSchoolInfo, submitEnrollmentData } from './services/gasService';
 import { InputGroup } from './components/InputGroup';
-import { Toast } from './components/Toast';
 
 const App: React.FC = () => {
   const [udiseCode, setUdiseCode] = useState('');
@@ -11,7 +10,7 @@ const App: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [school, setSchool] = useState<SchoolInfo | null>(null);
   const [isUpdate, setIsUpdate] = useState(false);
-  const [toast, setToast] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const [class6, setClass6] = useState<ClassData>({ enrolled: 0, registration: 0 });
   const [class7, setClass7] = useState<ClassData>({ enrolled: 0, registration: 0 });
@@ -25,9 +24,9 @@ const App: React.FC = () => {
   }, [class6, class7, class8]);
 
   const errors = {
-    class6: class6.registration > class6.enrolled ? 'Must be ≤ enrolled' : null,
-    class7: class7.registration > class7.enrolled ? 'Must be ≤ enrolled' : null,
-    class8: class8.registration > class8.enrolled ? 'Must be ≤ enrolled' : null,
+    class6: class6.registration > class6.enrolled ? 'Registration cannot exceed Enrolled' : null,
+    class7: class7.registration > class7.enrolled ? 'Registration cannot exceed Enrolled' : null,
+    class8: class8.registration > class8.enrolled ? 'Registration cannot exceed Enrolled' : null,
   };
 
   const hasErrors = !!(errors.class6 || errors.class7 || errors.class8);
@@ -35,7 +34,8 @@ const App: React.FC = () => {
   const handleUdiseSearch = async () => {
     if (!udiseCode || udiseCode.length < 5) return;
     setLoading(true);
-    setToast(null);
+    setMessage(null);
+    setSchool(null);
     
     const response = await fetchSchoolInfo(udiseCode);
     setLoading(false);
@@ -47,7 +47,6 @@ const App: React.FC = () => {
         setClass7(response.data.existingData.class7);
         setClass8(response.data.existingData.class8);
         setIsUpdate(true);
-        setToast({ type: 'success', text: 'Existing data found and loaded!' });
       } else {
         setClass6({ enrolled: 0, registration: 0 });
         setClass7({ enrolled: 0, registration: 0 });
@@ -56,7 +55,7 @@ const App: React.FC = () => {
       }
     } else {
       setSchool(null);
-      setToast({ type: 'error', text: response.error || 'School not found' });
+      setMessage({ type: 'error', text: response.error || 'School not found' });
     }
   };
 
@@ -83,125 +82,121 @@ const App: React.FC = () => {
 
     if (response.success) {
       const successMsg = isUpdate ? 'Data updated successfully!' : 'Data saved successfully!';
-      setToast({ type: 'success', text: successMsg });
-      // Reset
-      setTimeout(() => {
-        setUdiseCode('');
-        setSchool(null);
-      }, 1000);
+      alert(successMsg);
+      setMessage({ type: 'success', text: successMsg });
+      // Clear form for fresh state
+      setUdiseCode('');
+      setSchool(null);
     } else {
-      setToast({ type: 'error', text: response.error || 'Failed to save data' });
+      setMessage({ type: 'error', text: response.error || 'Failed to save data' });
     }
   };
 
   return (
-    <div className="relative min-h-screen py-10 px-4 sm:px-6 lg:px-8">
-      {/* Toast Notification */}
-      {toast && <Toast message={toast.text} type={toast.type} onClose={() => setToast(null)} />}
-
-      {/* Decorative Background Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/20 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-200/20 blur-[120px] rounded-full"></div>
-      </div>
-
-      <div className="max-w-4xl mx-auto space-y-10">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto space-y-6">
         
-        {/* Hero Header */}
-        <header className="text-center space-y-4 animate-fade-in">
-          <div className="inline-block px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-600 text-xs font-bold uppercase tracking-[0.2em] mb-2 shadow-sm">
-            Government Portal
-          </div>
-          <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight sm:text-6xl drop-shadow-sm">
-            परीक्षा पर चर्चा <span className="text-indigo-600">2026</span>
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
+            School Enrollment Portal
           </h1>
-          <p className="text-slate-500 max-w-xl mx-auto text-lg leading-relaxed">
-            Ensuring every student is part of the dialogue. Manage school enrollment and registration data seamlessly.
+          <p className="text-lg text-gray-500">
+            Enter UDISE Code to manage registration data
           </p>
-        </header>
+        </div>
 
-        {/* Search Engine Section */}
-        <section className="glass-panel p-2 rounded-[2.5rem] premium-shadow border border-white/60">
-          <div className="p-2 sm:p-4">
-            <div className="flex flex-col sm:flex-row gap-3 p-2 rounded-[2rem] bg-white shadow-inner">
-              <div className="flex-grow flex items-center px-6 py-2">
-                <span className="text-slate-400 mr-4">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </span>
+        {/* UDISE Search Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-grow">
+                <label htmlFor="udise" className="block text-sm font-medium text-gray-700 mb-1">
+                  UDISE Code
+                </label>
                 <input
                   id="udise"
                   type="text"
                   value={udiseCode}
                   onChange={(e) => setUdiseCode(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleUdiseSearch()}
-                  placeholder="Enter 11-digit UDISE Code..."
-                  className="w-full h-12 bg-transparent text-slate-800 font-semibold placeholder:text-slate-300 outline-none text-lg"
+                  placeholder="Enter 11-digit UDISE Code"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-lg font-mono"
                 />
               </div>
-              <button
-                onClick={handleUdiseSearch}
-                disabled={loading || !udiseCode}
-                className="group relative h-14 w-full sm:w-auto px-10 bg-indigo-600 text-white font-bold rounded-[1.5rem] hover:bg-indigo-700 active:scale-95 transition-all duration-300 disabled:opacity-50 overflow-hidden shadow-xl shadow-indigo-200"
-              >
-                <div className="flex items-center justify-center gap-3">
+              <div className="flex items-end">
+                <button
+                  onClick={handleUdiseSearch}
+                  disabled={loading || !udiseCode}
+                  className="w-full sm:w-auto px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-100 flex items-center justify-center"
+                >
                   {loading ? (
-                    <div className="w-5 h-5 border-2 border-white loader rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <span>Fetch Data</span>
-                      <svg className="group-hover:translate-x-1 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                    </>
-                  )}
-                </div>
-              </button>
+                    <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : 'Fetch Details'}
+                </button>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Data Management Section */}
+        {/* Status Message */}
+        {message && (
+          <div className={`p-4 rounded-xl border ${
+            message.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'
+          } animate-fade-in`}>
+            <div className="flex">
+              <div className="flex-shrink-0">
+                {message.type === 'success' ? (
+                  <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 font-medium">{message.text}</div>
+            </div>
+          </div>
+        )}
+
+        {/* School Details Card & Form */}
         {school && (
-          <div className="animate-slide-up space-y-8 pb-12">
-            {/* School Profile Glass Card */}
-            <div className="relative overflow-hidden glass-panel rounded-[3rem] p-10 premium-shadow">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[80px] -mr-32 -mt-32 rounded-full"></div>
-              
-              <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                <div className="space-y-4">
-                   <div className="flex items-center gap-3">
-                      <div className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                        {school.schoolType}
-                      </div>
-                      {isUpdate && (
-                        <div className="px-3 py-1 bg-amber-400 text-amber-900 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                          Existing Record
-                        </div>
-                      )}
-                   </div>
-                   <div>
-                      <h2 className="text-4xl font-black text-slate-800 tracking-tight leading-tight uppercase">
-                        {school.schoolName}
-                      </h2>
-                      <p className="text-indigo-500 font-bold tracking-[0.2em] mt-2 flex items-center gap-2">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        {school.nyayPanchayat}
-                      </p>
-                   </div>
+          <div className="animate-slide-up space-y-6">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+               {isUpdate && (
+                <div className="absolute top-2 right-2 bg-yellow-400 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">
+                  Editing Existing Record
                 </div>
-
-                <div className="bg-slate-900/5 px-8 py-6 rounded-[2rem] border border-slate-200/30">
-                  <div className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">UDISE Identification</div>
-                  <div className="text-3xl font-mono font-bold text-slate-800 tracking-tighter">
-                    {school.udiseCode}
-                  </div>
+               )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">School Name</p>
+                  <p className="text-xl font-bold">{school.schoolName}</p>
+                </div>
+                <div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">Nyay Panchayat</p>
+                  <p className="text-xl font-bold">{school.nyayPanchayat}</p>
+                </div>
+                <div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">UDISE Code</p>
+                  <p className="text-lg font-mono">{school.udiseCode}</p>
+                </div>
+                <div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-wider mb-1">School Type</p>
+                  <p className="text-lg font-bold">{school.schoolType}</p>
                 </div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Input Cards Grid */}
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InputGroup
-                  label="Class 06"
+                  label="Class 6"
                   enrolledValue={class6.enrolled}
                   registrationValue={class6.registration}
                   onEnrolledChange={(v) => setClass6(p => ({ ...p, enrolled: v }))}
@@ -209,7 +204,7 @@ const App: React.FC = () => {
                   error={errors.class6 || undefined}
                 />
                 <InputGroup
-                  label="Class 07"
+                  label="Class 7"
                   enrolledValue={class7.enrolled}
                   registrationValue={class7.registration}
                   onEnrolledChange={(v) => setClass7(p => ({ ...p, enrolled: v }))}
@@ -217,7 +212,7 @@ const App: React.FC = () => {
                   error={errors.class7 || undefined}
                 />
                 <InputGroup
-                  label="Class 08"
+                  label="Class 8"
                   enrolledValue={class8.enrolled}
                   registrationValue={class8.registration}
                   onEnrolledChange={(v) => setClass8(p => ({ ...p, enrolled: v }))}
@@ -226,50 +221,38 @@ const App: React.FC = () => {
                 />
               </div>
 
-              {/* Analytics Summary */}
-              <div className="glass-panel p-10 rounded-[3rem] border border-white/40 shadow-xl overflow-hidden relative group">
-                <div className="absolute top-0 right-0 p-8 opacity-5 transition-opacity group-hover:opacity-10">
-                   <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
-                  <div className="text-center sm:text-left sm:pr-8">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Enrollment</p>
-                    <p className="text-5xl font-black text-slate-800 tracking-tighter">{totals.totalEnrolled}</p>
+              {/* Summary Section */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Summary</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-gray-500 uppercase">Total Enrolled</p>
+                    <p className="text-2xl font-black text-gray-800">{totals.totalEnrolled}</p>
                   </div>
-                  <div className="text-center sm:text-left sm:px-8 pt-6 sm:pt-0">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Registration Goal</p>
-                    <p className="text-5xl font-black text-slate-800 tracking-tighter">{totals.totalRegistration}</p>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-gray-500 uppercase">Total Registration</p>
+                    <p className="text-2xl font-black text-gray-800">{totals.totalRegistration}</p>
                   </div>
-                  <div className="text-center sm:text-left sm:pl-8 pt-6 sm:pt-0">
-                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-2">Progress Index</p>
-                    <div className="flex items-baseline gap-1 justify-center sm:justify-start">
-                      <p className="text-5xl font-black text-indigo-600 tracking-tighter">{totals.percentage}</p>
-                      <span className="text-2xl font-bold text-indigo-400">%</span>
-                    </div>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-gray-500 uppercase">Percentage</p>
+                    <p className="text-2xl font-black text-indigo-600">{totals.percentage}%</p>
                   </div>
                 </div>
               </div>
 
-              {/* Action Button */}
               <button
                 type="submit"
                 disabled={submitting || hasErrors}
-                className={`group relative w-full h-20 rounded-[1.5rem] font-black text-xl transition-all duration-500 flex items-center justify-center gap-4 overflow-hidden shadow-2xl disabled:opacity-50 disabled:grayscale ${
-                  isUpdate 
-                    ? 'bg-slate-900 text-white hover:bg-black shadow-slate-200' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                className={`w-full py-4 text-white rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl flex items-center justify-center gap-2 ${
+                  isUpdate ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-900 hover:bg-black'
                 }`}
               >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                 {submitting ? (
-                   <div className="w-6 h-6 border-2 border-white loader rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    <span className="relative z-10">{isUpdate ? 'UPDATE RECORD' : 'CONFIRM SUBMISSION'}</span>
-                    <svg className="group-hover:translate-x-2 transition-transform duration-300 relative z-10" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                  </>
-                )}
+                   <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                 </svg>
+                ) : isUpdate ? 'Update Enrollment Data' : 'Submit Enrollment Data'}
               </button>
             </form>
           </div>
@@ -278,21 +261,16 @@ const App: React.FC = () => {
       </div>
       
       <style>{`
-        .animate-fade-in {
-            animation: fadeIn 0.8s ease-out forwards;
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type=number] {
-          -moz-appearance: textfield;
-        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .animate-slide-up { animation: slide-up 0.4s ease-out; }
       `}</style>
     </div>
   );
