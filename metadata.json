@@ -1,0 +1,5 @@
+{
+  "name": "School Registration Portal",
+  "description": "A high-performance portal for managing school enrollment and registration data, integrated with Google Sheets.",
+  "requestFramePermissions": []
+}
