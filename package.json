@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "framer-motion": "11.11.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

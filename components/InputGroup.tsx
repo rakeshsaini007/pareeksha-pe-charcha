@@ -19,35 +19,47 @@ export const InputGroup: React.FC<InputGroupProps> = ({
   error
 }) => {
   return (
-    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{label}</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Enrolled</label>
+    <div className="glass-panel p-6 rounded-[2rem] border border-white/40 shadow-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.02] group">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{label}</h3>
+        <div className={`w-2 h-2 rounded-full ${error ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+      </div>
+      
+      <div className="space-y-4">
+        <div className="relative">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Enrolled Students</label>
           <input
             type="number"
             min="0"
             value={enrolledValue || ''}
             onChange={(e) => onEnrolledChange(Math.max(0, parseInt(e.target.value) || 0))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none transition-all"
+            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-slate-700 font-semibold outline-none transition-all"
             placeholder="0"
           />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Registration</label>
+        
+        <div className="relative">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Registration Done</label>
           <input
             type="number"
             min="0"
             value={registrationValue || ''}
             onChange={(e) => onRegistrationChange(Math.max(0, parseInt(e.target.value) || 0))}
-            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none transition-all ${
-              error ? 'border-red-500 bg-red-50' : 'border-gray-300'
+            className={`w-full px-4 py-3 border rounded-xl focus:ring-4 text-slate-700 font-semibold outline-none transition-all ${
+              error 
+                ? 'border-rose-400 bg-rose-50/30 focus:ring-rose-500/10 focus:border-rose-500' 
+                : 'border-slate-200 bg-slate-50/50 focus:ring-indigo-500/10 focus:border-indigo-500'
             }`}
             placeholder="0"
           />
         </div>
       </div>
-      {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+      
+      {error && (
+        <div className="mt-3 text-[10px] text-rose-600 font-bold bg-rose-50 py-1 px-3 rounded-full flex items-center gap-2">
+          <span className="text-lg leading-none">⚠</span> {error}
+        </div>
+      )}
     </div>
   );
 };
